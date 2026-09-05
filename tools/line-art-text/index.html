@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>线稿文字生成器 V2</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,"Microsoft YaHei",sans-serif;background:#edf3f6;color:#24333f}
+.app{min-height:100vh;display:grid;grid-template-columns:360px 1fr}
+.panel{background:#fff;padding:20px;border-right:1px solid #d7e0e6;overflow:auto;max-height:100vh}
+h1{font-size:20px;margin:0 0 6px}.sub,.note{font-size:12px;color:#71808b;line-height:1.6}
+.group{margin:16px 0}.label{display:flex;justify-content:space-between;font-size:13px;color:#4d5e69;margin-bottom:7px}
+textarea,select{width:100%;border:1px solid #cfd9df;border-radius:10px;padding:10px 12px;font:inherit}
+textarea{min-height:95px;resize:vertical;line-height:1.55}
+input[type=range]{width:100%}
+.row,.presets{display:grid;gap:8px}.row{grid-template-columns:1fr 1fr}.presets{grid-template-columns:1fr 1fr 1fr;margin:14px 0}
+button{border:0;border-radius:10px;padding:10px;font:inherit;font-weight:700;cursor:pointer;background:#eaf1f5;color:#294155}
+.primary{background:#284157;color:white}.stage{display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto}
+.wrap{background:#dfe8ed;padding:12px;border-radius:16px;box-shadow:0 18px 40px rgba(30,50,65,.12)}
+canvas{display:block;max-width:min(72vw,760px);max-height:90vh;width:auto;height:auto;background:#eef8fa}
+.val{color:#7a8791;font-size:12px}
+@media(max-width:900px){.app{grid-template-columns:1fr}.panel{max-height:none;border-right:0;border-bottom:1px solid #d7e0e6}canvas{max-width:92vw;max-height:none}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="panel">
+<div style="margin-bottom:12px"><a href="../../index.html" style="color:#536c7d;text-decoration:none;font-size:13px">← 返回工具箱</a></div>
+<h1>线稿文字生成器 V2</h1>
+<div class="sub">加入文字断裂、局部密集干扰、字符错位、噪点和轻微模糊。</div>
+
+<div class="presets">
+<button data-p="light">轻度</button>
+<button data-p="mid">中度</button>
+<button data-p="strong">强度</button>
+</div>
+
+<div class="group"><div class="label">文字内容</div>
+<textarea id="text">分享复制视频链接
+打开迅雷自动跳转</textarea></div>
+
+<div class="group"><div class="label">画布比例</div>
+<select id="ratio">
+<option value="3:4">3:4（1080×1440）</option>
+<option value="9:16">9:16（1080×1920）</option>
+<option value="1:1">1:1（1440×1440）</option>
+<option value="16:9">16:9（1920×1080）</option>
+</select></div>
+
+<div class="group"><div class="label"><span>文字大小</span><span class="val" id="fontSizeV"></span></div><input id="fontSize" type="range" min="48" max="150" value="92"></div>
+<div class="group"><div class="label"><span>文字描边</span><span class="val" id="strokeV"></span></div><input id="stroke" type="range" min=".8" max="5" step=".2" value="1.8"></div>
+<div class="group"><div class="label"><span>文字透明度</span><span class="val" id="alphaV"></span></div><input id="alpha" type="range" min=".18" max=".9" step=".02" value=".56"></div>
+<div class="group"><div class="label"><span>文字缺损</span><span class="val" id="damageV"></span></div><input id="damage" type="range" min="0" max=".55" step=".01" value=".20"></div>
+<div class="group"><div class="label"><span>字符错位</span><span class="val" id="jitterV"></span></div><input id="jitter" type="range" min="0" max="18" value="5"></div>
+<div class="group"><div class="label"><span>文字区干扰密度</span><span class="val" id="localV"></span></div><input id="local" type="range" min=".2" max="2.2" step=".05" value="1.25"></div>
+<div class="group"><div class="label"><span>全局折线</span><span class="val" id="zigV"></span></div><input id="zig" type="range" min="4" max="55" value="24"></div>
+<div class="group"><div class="label"><span>局部竖线</span><span class="val" id="vertV"></span></div><input id="vert" type="range" min="0" max="110" value="54"></div>
+<div class="group"><div class="label"><span>电路细节</span><span class="val" id="circuitV"></span></div><input id="circuit" type="range" min="0" max="160" value="72"></div>
+<div class="group"><div class="label"><span>噪点</span><span class="val" id="noiseV"></span></div><input id="noise" type="range" min="0" max=".18" step=".01" value=".05"></div>
+<div class="group"><div class="label"><span>模糊</span><span class="val" id="blurV"></span></div><input id="blur" type="range" min="0" max="1.5" step=".1" value=".4"></div>
+
+<div class="row">
+<button id="reroll">重新随机</button>
+<button id="save" class="primary">保存 PNG</button>
+</div>
+<div class="note" style="margin-top:14px">建议先用“中度”。文字缺损、文字区干扰密度和透明度最影响最终效果。</div>
+</aside>
+
+<main class="stage"><div class="wrap"><canvas id="c"></canvas></div></main>
+</div>
+
+<script>
+const $=id=>document.getElementById(id), c=$("c"), x=c.getContext("2d",{alpha:false});
+let seed=(Math.random()*1e9)|0;
+function rng(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
+function rr(a,b,r){return a+(b-a)*r()} function ri(a,b,r){return Math.floor(rr(a,b+1,r))}
+function size(){let q=$("ratio").value;return q==="9:16"?[1080,1920]:q==="1:1"?[1440,1440]:q==="16:9"?[1920,1080]:[1080,1440]}
+function lines(){return($("text").value||"示例文字").split(/\n+/).map(s=>s.trim()).filter(Boolean)}
+function bg(r){
+ let g=x.createLinearGradient(0,0,c.width,c.height);g.addColorStop(0,"#edf8fb");g.addColorStop(.5,"#f9fcfd");g.addColorStop(1,"#e8f3f7");x.fillStyle=g;x.fillRect(0,0,c.width,c.height);
+ for(let y=24;y<c.height;y+=ri(28,52,r)){x.strokeStyle=`rgba(60,90,108,${rr(.02,.06,r)})`;x.lineWidth=1;x.beginPath();x.moveTo(0,y);x.lineTo(c.width,y+rr(-5,5,r));x.stroke()}
+}
+function zig(r,n,y1=0,y2=c.height,boost=1){
+ for(let i=0;i<n;i++){let base=rr(y1,y2,r), seg=ri(7,15,r), amp=rr(18,72,r), sx=-100, ex=c.width+100, st=(ex-sx)/seg, dark=r()<.3;
+  x.strokeStyle=`rgba(${dark?44:76},${dark?68:101},${dark?84:118},${Math.min(.78,(dark?rr(.26,.5,r):rr(.08,.22,r))*boost)})`;x.lineWidth=dark?rr(2.2,5.2,r):rr(.8,2.1,r);
+  x.beginPath();x.moveTo(sx,base+rr(-amp,amp,r));for(let s=1;s<=seg;s++)x.lineTo(sx+st*s,base+rr(-amp,amp,r));x.stroke()
+ }
+}
+function circuit(r,n,boost=1){
+ for(let i=0;i<n;i++){let px=rr(-20,c.width-20,r),py=rr(10,c.height-20,r),len=rr(20,110,r),a=rr(.06,.2,r)*boost;
+  x.strokeStyle=`rgba(60,86,104,${Math.min(.45,a)})`;x.lineWidth=rr(.7,1.7,r);x.beginPath();x.moveTo(px,py);
+  let cx=px,cy=py;for(let s=0;s<ri(2,5,r);s++){cx+=rr(12,len/3+18,r);if(r()<.55)cy+=rr(-26,26,r);x.lineTo(cx,cy)}x.stroke();
+  if(r()<.42)x.strokeRect(cx-rr(4,16,r),cy-rr(2,6,r),rr(10,30,r),rr(5,13,r))
+ }
+}
+function fit(t,max,p){let s=p;while(s>28){x.font=`700 ${s}px "Microsoft YaHei","PingFang SC",sans-serif`;if(x.measureText(t).width<=max)break;s-=2}return s}
+function textLayer(r){
+ let l=document.createElement("canvas");l.width=c.width;l.height=c.height;let k=l.getContext("2d"), arr=lines(), pref=+$("fontSize").value, gap=pref*1.5, total=(arr.length-1)*gap+pref, y=c.height*.48-total/2+pref/2;
+ let st=+$("stroke").value, al=+$("alpha").value, jit=+$("jitter").value;
+ k.textAlign="center";k.textBaseline="middle";k.lineJoin="round";
+ for(let ln of arr){let fs=fit(ln,c.width*.78,pref);k.font=`700 ${fs}px "Microsoft YaHei","PingFang SC",sans-serif`;
+  let chars=[...ln], ws=chars.map(ch=>k.measureText(ch).width), tw=ws.reduce((a,b)=>a+b,0), px=c.width/2-tw/2;
+  chars.forEach((ch,i)=>{let cw=ws[i],cx=px+cw/2+rr(-jit,jit,r),cy=y+rr(-jit*.6,jit*.6,r);
+   k.lineWidth=st+1.4;k.strokeStyle=`rgba(238,247,250,${Math.min(1,al+.25)})`;k.strokeText(ch,cx,cy);
+   k.lineWidth=st;k.strokeStyle=`rgba(45,68,84,${al})`;k.strokeText(ch,cx,cy);px+=cw+rr(-jit*.25,jit*.25,r)
+  });y+=gap
+ }
+ let d=+$("damage").value;k.save();k.globalCompositeOperation="destination-out";
+ for(let i=0;i<Math.floor(90+d*300);i++)if(r()<d*1.55){let px=rr(c.width*.16,c.width*.84,r),py=rr(c.height*.30,c.height*.66,r),bw=rr(5,28+d*55,r),bh=rr(2,10+d*20,r);k.fillStyle="rgba(0,0,0,.85)";k.save();k.translate(px,py);k.rotate(rr(-.75,.75,r));k.fillRect(-bw/2,-bh/2,bw,bh);k.restore()}
+ k.restore();return l
+}
+function local(r,n,y1,y2){
+ for(let i=0;i<n;i++){let px=rr(c.width*.17,c.width*.83,r),py=rr(y1,y2,r),len=rr(30,210,r);
+  x.strokeStyle=`rgba(48,70,86,${rr(.18,.55,r)})`;x.lineWidth=rr(1,3,r);x.beginPath();x.moveTo(px,py);x.lineTo(px+rr(-8,8,r),Math.min(c.height,py+len));x.stroke();
+  if(r()<.4)x.strokeRect(px-rr(5,18,r),py+rr(5,Math.max(8,len*.7),r),rr(12,38,r),rr(6,16,r))
+ }
+}
+function fragments(r,n,y1,y2){
+ for(let i=0;i<n;i++){let px=rr(c.width*.16,c.width*.84,r),py=rr(y1,y2,r),len=rr(10,55,r);x.strokeStyle=`rgba(52,76,92,${rr(.16,.48,r)})`;x.lineWidth=rr(.8,2.4,r);x.beginPath();if(r()<.5){x.moveTo(px-len/2,py);x.lineTo(px+len/2,py+rr(-8,8,r))}else{x.moveTo(px,py-len/2);x.lineTo(px+rr(-8,8,r),py+len/2)}x.stroke()}
+}
+function noise(r,a){if(a<=0)return;let im=x.getImageData(0,0,c.width,c.height),d=im.data,p=a*.5;for(let i=0;i<d.length;i+=4)if(r()<p){let n=rr(-18,18,r)*a*5;d[i]+=n;d[i+1]+=n;d[i+2]+=n}x.putImageData(im,0,0)}
+function blur(v){if(v<=0)return;let t=document.createElement("canvas");t.width=c.width;t.height=c.height;t.getContext("2d").drawImage(c,0,0);x.filter=`blur(${v}px)`;x.drawImage(t,0,0);x.filter="none"}
+function draw(){
+ [c.width,c.height]=size();let r=rng(seed),ld=+$("local").value,y1=c.height*.30,y2=c.height*.68;
+ bg(r);circuit(r,+$("circuit").value);zig(r,+$("zig").value);zig(r,Math.floor(6*ld),y1,y2,1.15);fragments(r,Math.floor(28*ld),y1,y2);
+ x.drawImage(textLayer(r),0,0);
+ local(r,Math.floor(+$("vert").value*ld),y1,y2);fragments(r,Math.floor(52*ld),y1,y2);zig(r,Math.floor(9*ld),y1,y2,1.25);
+ x.save();x.beginPath();x.rect(c.width*.12,y1,c.width*.76,y2-y1);x.clip();circuit(r,Math.floor(22*ld),1.35);x.restore();
+ noise(r,+$("noise").value);blur(+$("blur").value)
+}
+function sync(){
+ $("fontSizeV").textContent=$("fontSize").value+" px";$("strokeV").textContent=$("stroke").value+" px";$("alphaV").textContent=$("alpha").value;
+ $("damageV").textContent=Math.round(+$("damage").value*100)+"%";$("jitterV").textContent=$("jitter").value+" px";$("localV").textContent=$("local").value+"×";
+ $("zigV").textContent=$("zig").value;$("vertV").textContent=$("vert").value;$("circuitV").textContent=$("circuit").value;
+ $("noiseV").textContent=$("noise").value;$("blurV").textContent=$("blur").value+" px"
+}
+["text","ratio","fontSize","stroke","alpha","damage","jitter","local","zig","vert","circuit","noise","blur"].forEach(id=>{ $(id).addEventListener("input",()=>{sync();draw()});$(id).addEventListener("change",()=>{sync();draw()})});
+document.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{let p=b.dataset.p,vals=p==="light"?[.68,.10,3,.8,18,34,52,.03,.2]:p==="mid"?[.56,.20,5,1.25,24,54,72,.05,.4]:[.44,.31,8,1.75,31,78,95,.09,.7];
+ ["alpha","damage","jitter","local","zig","vert","circuit","noise","blur"].forEach((id,i)=>$(id).value=vals[i]);seed=(Math.random()*1e9)|0;sync();draw()});
+$("reroll").onclick=()=>{seed=(Math.random()*1e9)|0;draw()};
+$("save").onclick=()=>{let a=document.createElement("a");a.href=c.toDataURL("image/png");a.download="线稿文字_V2_"+Date.now()+".png";a.click()};
+sync();draw();
+</script>
+</body>
+</html>
