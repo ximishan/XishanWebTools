@@ -13,12 +13,12 @@
 <div class="g row" id="customRow" style="display:none"><div><div class="label">宽度</div><input id="cw" type="number" value="1080" min="200" max="5000"></div><div><div class="label">高度</div><input id="ch" type="number" value="1440" min="200" max="5000"></div></div>
 <div class="g"><div class="label"><span>拼接缝虚化</span><span class="val" id="blurV"></span></div><input id="blur" type="range" min="0" max="40" value="10"></div>
 <div class="g"><div class="label"><span>图片缩放</span><span class="val" id="zoomV"></span></div><input id="zoom" type="range" min="1" max="1.35" step=".01" value="1"></div>
-<div class="g"><div class="label"><span>添加花字</span><span class="val">每张图不同样式</span></div><label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#4d5d68"><input id="fancyText" type="checkbox" checked> 开启花字</label><input id="fancyWords" type="text" value="佑滑自取" maxlength="12" style="margin-top:8px;width:100%;border:1px solid #cfd9df;border-radius:9px;padding:9px 10px;background:white;font:inherit"><div class="hint" style="margin-top:6px">每张子图都会自动使用不同花字样式，并在文字后添加箭头。</div></div>
+<div class="g"><div class="label"><span>添加花字</span><span class="val">每张成品不同样式</span></div><label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#4d5d68"><input id="fancyText" type="checkbox" checked> 开启花字</label><input id="fancyWords" type="text" value="佑滑自取" maxlength="12" style="margin-top:8px;width:100%;border:1px solid #cfd9df;border-radius:9px;padding:9px 10px;background:white;font:inherit"><div class="hint" style="margin-top:6px">每张最终拼接图只显示一次花字，位置在整张图片靠下约 75% 处，并在文字后添加箭头。批量生成时每张成品会轮换不同花字样式。</div></div>
 <div class="g"><div class="status" id="status">先选择至少 1 个素材目录，然后点击“随机生成”。如果目录数量不足，会从已选择目录的全部图片中补足。</div></div>
 <div class="buttons"><button id="gen">随机生成预览</button><button id="save" class="primary">保存当前</button><button id="batch">批量生成下载</button></div>
 </aside><main class="stage"><div class="frame"><canvas id="c" width="1080" height="1440"></canvas></div></main></div>
 <script>
-const $=id=>document.getElementById(id),c=$("c"),x=c.getContext("2d");const pools=[[],[],[],[]], history=[new Set(),new Set(),new Set(),new Set()];let lastFiles=[];
+const $=id=>document.getElementById(id),c=$("c"),x=c.getContext("2d");const pools=[[],[],[],[]], history=[new Set(),new Set(),new Set(),new Set()];let lastFiles=[],fancyRenderIndex=0;
 const isImg=f=>f.type.startsWith("image/")||/\.(png|jpe?g|webp|gif|bmp)$/i.test(f.name);function key(f){return[f.name,f.size,f.lastModified].join("|")}
 for(let i=1;i<=4;i++)$("f"+i).addEventListener("change",e=>{pools[i-1]=[...e.target.files].filter(isImg);history[i-1].clear();$("n"+i).textContent=pools[i-1].length+" 张图片";updateStatus()});
 function outSize(){let r=$("ratio").value;if(r==="9:16")return[1080,1920];if(r==="16:9")return[1920,1080];if(r==="1:1")return[1440,1440];if(r==="custom")return[Math.max(200,+$("cw").value||1080),Math.max(200,+$("ch").value||1440)];return[1080,1440]}
@@ -37,9 +37,9 @@ const fancyStyles=[
 ];
 function drawFancyLabel(box,index,words){
   let[bx,by,bw,bh]=box,s=fancyStyles[index%fancyStyles.length],txt=(words||"佑滑自取")+" ➜";
-  let size=Math.max(28,Math.min(bw*.13,bh*.16,112)),maxW=bw*.82;
+  let size=Math.max(36,Math.min(bw*.085,bh*.09,118)),maxW=bw*.78;
   x.save();x.beginPath();x.rect(bx,by,bw,bh);x.clip();
-  x.translate(bx+bw/2,by+bh*.72);x.rotate(s.angle);
+  x.translate(bx+bw/2,by+bh*.75);x.rotate(s.angle);
   x.textAlign="center";x.textBaseline="middle";x.lineJoin="round";
   x.font=`${s.font} ${size}px "Microsoft YaHei","PingFang SC","Arial Black",sans-serif`;
   let measured=x.measureText(txt).width;if(measured>maxW){size*=maxW/measured;x.font=`${s.font} ${size}px "Microsoft YaHei","PingFang SC","Arial Black",sans-serif`}
@@ -49,7 +49,7 @@ function drawFancyLabel(box,index,words){
   x.fillStyle=s.fill;x.fillText(txt,0,0);
   x.restore();
 }
-async function renderOnce(files){let[w,h]=outSize();c.width=w;c.height=h;x.fillStyle="#111";x.fillRect(0,0,w,h);let ims=await Promise.all(files.map(loadImage)),bs=cells(files.length,$("layout").value,w,h),z=+$("zoom").value;ims.forEach((im,i)=>drawCover(im,bs[i],z));seamBlur(bs,+$("blur").value);if($("fancyText").checked)bs.forEach((b,i)=>drawFancyLabel(b,i,$("fancyWords").value.trim()||"佑滑自取"));lastFiles=files;return files}
+async function renderOnce(files){let[w,h]=outSize();c.width=w;c.height=h;x.fillStyle="#111";x.fillRect(0,0,w,h);let ims=await Promise.all(files.map(loadImage)),bs=cells(files.length,$("layout").value,w,h),z=+$("zoom").value;ims.forEach((im,i)=>drawCover(im,bs[i],z));seamBlur(bs,+$("blur").value);if($("fancyText").checked){drawFancyLabel([0,0,w,h],fancyRenderIndex,$("fancyWords").value.trim()||"佑滑自取");fancyRenderIndex=(fancyRenderIndex+1)%fancyStyles.length}lastFiles=files;return files}
 async function generate(){let n=+$("count").value,files=chooseFiles(n);if(files.length<n){$("status").textContent=`素材不足：需要 ${n} 张，目前能选到 ${files.length} 张。请再添加目录或图片。`;return}await renderOnce(files);$("status").textContent="本次随机："+files.map(f=>f.name).join(" ｜ ")}
 function updateStatus(){let total=pools.reduce((s,p)=>s+p.length,0);$("status").textContent=`已加载 ${total} 张图片。随机时同一张图片不会在同一张拼接图里重复。批量下载时请允许浏览器多文件下载。`}
 function canvasToBlob(type="image/jpeg",quality=.94){return new Promise((res,rej)=>c.toBlob(b=>b?res(b):rej(new Error("导出失败")),type,quality))}
