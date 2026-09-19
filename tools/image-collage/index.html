@@ -13,6 +13,7 @@
 <div class="g row" id="customRow" style="display:none"><div><div class="label">宽度</div><input id="cw" type="number" value="1080" min="200" max="5000"></div><div><div class="label">高度</div><input id="ch" type="number" value="1440" min="200" max="5000"></div></div>
 <div class="g"><div class="label"><span>拼接缝虚化</span><span class="val" id="blurV"></span></div><input id="blur" type="range" min="0" max="40" value="10"></div>
 <div class="g"><div class="label"><span>图片缩放</span><span class="val" id="zoomV"></span></div><input id="zoom" type="range" min="1" max="1.35" step=".01" value="1"></div>
+<div class="g"><div class="label"><span>添加花字</span><span class="val">每张图不同样式</span></div><label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#4d5d68"><input id="fancyText" type="checkbox" checked> 开启花字</label><input id="fancyWords" type="text" value="佑滑自取" maxlength="12" style="margin-top:8px;width:100%;border:1px solid #cfd9df;border-radius:9px;padding:9px 10px;background:white;font:inherit"><div class="hint" style="margin-top:6px">每张子图都会自动使用不同花字样式，并在文字后添加箭头。</div></div>
 <div class="g"><div class="status" id="status">先选择至少 1 个素材目录，然后点击“随机生成”。如果目录数量不足，会从已选择目录的全部图片中补足。</div></div>
 <div class="buttons"><button id="gen">随机生成</button><button id="save" class="primary">保存图片</button></div>
 </aside><main class="stage"><div class="frame"><canvas id="c" width="1080" height="1440"></canvas></div></main></div>
@@ -27,7 +28,28 @@ function loadImage(file){return new Promise((res,rej)=>{let im=new Image(),u=URL
 function cells(n,layout,w,h){let a=[];if(layout==="horizontal"){for(let i=0;i<n;i++)a.push([i*w/n,0,w/n,h]);return a}if(layout==="grid"){if(n===3)return[[0,0,w/2,h/2],[w/2,0,w/2,h/2],[0,h/2,w,h/2]];return[[0,0,w/2,h/2],[w/2,0,w/2,h/2],[0,h/2,w/2,h/2],[w/2,h/2,w/2,h/2]]}for(let i=0;i<n;i++)a.push([0,i*h/n,w,h/n]);return a}
 function drawCover(im,box,zoom){let[bx,by,bw,bh]=box,scale=Math.max(bw/im.width,bh/im.height)*zoom,sw=bw/scale,sh=bh/scale,sx=(im.width-sw)/2,sy=(im.height-sh)/2;x.drawImage(im,sx,sy,sw,sh,bx,by,bw,bh)}
 function seamBlur(boxes,amount){if(amount<=0)return;let t=document.createElement("canvas");t.width=c.width;t.height=c.height;t.getContext("2d").drawImage(c,0,0);x.save();x.filter=`blur(${amount/2}px)`;for(let i=0;i<boxes.length-1;i++){let a=boxes[i],b=boxes[i+1];if(Math.abs(a[1]+a[3]-b[1])<2)x.drawImage(t,0,a[1]+a[3]-amount,c.width,amount*2,0,a[1]+a[3]-amount,c.width,amount*2);if(Math.abs(a[0]+a[2]-b[0])<2)x.drawImage(t,a[0]+a[2]-amount,0,amount*2,c.height,a[0]+a[2]-amount,0,amount*2,c.height)}x.restore();x.filter="none"}
-async function generate(){let n=+$("count").value,files=chooseFiles(n);if(files.length<n){$("status").textContent=`素材不足：需要 ${n} 张，目前能选到 ${files.length} 张。请再添加目录或图片。`;return}let[w,h]=outSize();c.width=w;c.height=h;x.fillStyle="#111";x.fillRect(0,0,w,h);let ims=await Promise.all(files.map(loadImage)),bs=cells(n,$("layout").value,w,h),z=+$("zoom").value;ims.forEach((im,i)=>drawCover(im,bs[i],z));seamBlur(bs,+$("blur").value);$("status").textContent="本次随机："+files.map(f=>f.name).join(" ｜ ")}
+const fancyStyles=[
+{fill:"#fff45c",stroke:"#271a56",shadow:"#ff4d9d",font:"900",angle:-.055},
+{fill:"#8ff6ff",stroke:"#092d4d",shadow:"#ffffff",font:"900",angle:.045},
+{fill:"#ff9edf",stroke:"#4b164f",shadow:"#ffe75c",font:"900",angle:-.025},
+{fill:"#ffffff",stroke:"#d92b3a",shadow:"#111111",font:"900",angle:.065},
+{fill:"#b8ff7a",stroke:"#203b18",shadow:"#ffffff",font:"900",angle:-.04}
+];
+function drawFancyLabel(box,index,words){
+  let[bx,by,bw,bh]=box,s=fancyStyles[index%fancyStyles.length],txt=(words||"佑滑自取")+" ➜";
+  let size=Math.max(28,Math.min(bw*.13,bh*.16,112)),maxW=bw*.82;
+  x.save();x.beginPath();x.rect(bx,by,bw,bh);x.clip();
+  x.translate(bx+bw/2,by+bh*.72);x.rotate(s.angle);
+  x.textAlign="center";x.textBaseline="middle";x.lineJoin="round";
+  x.font=`${s.font} ${size}px "Microsoft YaHei","PingFang SC","Arial Black",sans-serif`;
+  let measured=x.measureText(txt).width;if(measured>maxW){size*=maxW/measured;x.font=`${s.font} ${size}px "Microsoft YaHei","PingFang SC","Arial Black",sans-serif`}
+  x.shadowColor="rgba(0,0,0,.35)";x.shadowBlur=Math.max(5,size*.08);x.shadowOffsetY=Math.max(3,size*.04);
+  x.lineWidth=Math.max(5,size*.12);x.strokeStyle=s.stroke;x.strokeText(txt,0,0);
+  x.shadowColor=s.shadow;x.shadowBlur=Math.max(7,size*.12);x.shadowOffsetY=0;
+  x.fillStyle=s.fill;x.fillText(txt,0,0);
+  x.restore();
+}
+async function generate(){let n=+$("count").value,files=chooseFiles(n);if(files.length<n){$("status").textContent=`素材不足：需要 ${n} 张，目前能选到 ${files.length} 张。请再添加目录或图片。`;return}let[w,h]=outSize();c.width=w;c.height=h;x.fillStyle="#111";x.fillRect(0,0,w,h);let ims=await Promise.all(files.map(loadImage)),bs=cells(n,$("layout").value,w,h),z=+$("zoom").value;ims.forEach((im,i)=>drawCover(im,bs[i],z));seamBlur(bs,+$("blur").value);if($("fancyText").checked)bs.forEach((b,i)=>drawFancyLabel(b,i,$("fancyWords").value.trim()));$("status").textContent="本次随机："+files.map(f=>f.name).join(" ｜ ")}
 function updateStatus(){let total=pools.reduce((s,p)=>s+p.length,0);$("status").textContent=`已加载 ${total} 张图片。随机时同一张图片不会在同一张拼接图里重复。`}
 $("ratio").onchange=()=>{$("customRow").style.display=$("ratio").value==="custom"?"grid":"none"};$("count").onchange=()=>{$("folder4").style.opacity=$("count").value==="4"?"1":".55"};
 $("blur").oninput=()=>$("blurV").textContent=$("blur").value+" px";$("zoom").oninput=()=>$("zoomV").textContent=Number($("zoom").value).toFixed(2)+"×";$("blur").oninput();$("zoom").oninput();
