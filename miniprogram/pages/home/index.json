@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "西山工具箱",
+  "usingComponents": {
+    "ad-slot": "/components/ad-slot/index"
+  }
+}

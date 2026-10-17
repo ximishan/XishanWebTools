@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "线稿文字生成器",
+  "disableScroll": false,
+  "usingComponents": {
+    "ad-slot": "/components/ad-slot/index"
+  }
+}

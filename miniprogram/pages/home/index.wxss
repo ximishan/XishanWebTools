@@ -1,0 +1,158 @@
+.page {
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: 64rpx 36rpx 44rpx;
+  background: #f4f7f9;
+}
+
+.hero {
+  max-width: 1120rpx;
+  margin: 0 auto 44rpx;
+}
+
+.eyebrow {
+  margin-bottom: 14rpx;
+  color: #78909f;
+  font-size: 20rpx;
+  font-weight: 700;
+  letter-spacing: 4rpx;
+}
+
+.hero-title {
+  color: #172b3a;
+  font-size: 58rpx;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -1rpx;
+}
+
+.hero-subtitle {
+  margin-top: 20rpx;
+  color: #647b8b;
+  font-size: 28rpx;
+  line-height: 1.75;
+}
+
+.tool-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24rpx;
+  max-width: 1120rpx;
+  margin: 0 auto;
+}
+
+.tool-card {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 360rpx;
+  padding: 40rpx;
+  border: 1rpx solid #dbe4e9;
+  border-radius: 30rpx;
+  background: #ffffff;
+  box-shadow: 0 18rpx 50rpx rgba(37, 63, 78, 0.07);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.tool-card--pressed {
+  transform: scale(0.985);
+  box-shadow: 0 10rpx 28rpx rgba(37, 63, 78, 0.08);
+}
+
+.tool-icon {
+  height: 72rpx;
+  margin-bottom: 26rpx;
+  font-size: 64rpx;
+  font-weight: 500;
+  line-height: 72rpx;
+}
+
+.tool-title {
+  color: #172b3a;
+  font-size: 36rpx;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.tool-description {
+  min-height: 104rpx;
+  margin-top: 14rpx;
+  color: #647b8b;
+  font-size: 26rpx;
+  line-height: 1.7;
+}
+
+.tool-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 28rpx;
+}
+
+.tool-tag {
+  padding: 10rpx 18rpx;
+  border-radius: 999rpx;
+  background: #edf3f6;
+  color: #526a7a;
+  font-size: 22rpx;
+}
+
+.tool-arrow {
+  color: #38566a;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+.extension-note {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 22rpx;
+  max-width: 1120rpx;
+  margin: 26rpx auto 0;
+  padding: 28rpx 30rpx;
+  border: 2rpx dashed #d2dee5;
+  border-radius: 24rpx;
+  color: #748995;
+}
+
+.home-ad {
+  max-width: 1120rpx;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.extension-plus {
+  flex: 0 0 auto;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 20rpx;
+  background: #eaf1f5;
+  font-size: 40rpx;
+  line-height: 62rpx;
+  text-align: center;
+}
+
+.extension-title {
+  color: #526a7a;
+  font-size: 25rpx;
+  font-weight: 700;
+}
+
+.extension-description {
+  margin-top: 5rpx;
+  font-size: 22rpx;
+  line-height: 1.5;
+}
+
+.footer {
+  max-width: 1120rpx;
+  margin: 48rpx auto 0;
+  color: #8797a1;
+  font-size: 22rpx;
+}
+
+@media (min-width: 900px) {
+  .tool-card {
+    width: calc(50% - 12rpx);
+  }
+}

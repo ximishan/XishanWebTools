@@ -1,0 +1,30 @@
+<view wx:if="{{enabled && unitId}}" class="ad-slot {{loaded ? 'ad-slot--loaded' : ''}}">
+  <ad
+    wx:if="{{adType == 'grid'}}"
+    unit-id="{{unitId}}"
+    ad-type="grid"
+    ad-theme="{{adTheme}}"
+    grid-count="{{gridCount}}"
+    bindload="handleLoad"
+    binderror="handleError"
+    bindclose="handleClose"
+  ></ad>
+  <ad
+    wx:elif="{{adType == 'video'}}"
+    unit-id="{{unitId}}"
+    ad-type="video"
+    ad-theme="{{adTheme}}"
+    bindload="handleLoad"
+    binderror="handleError"
+    bindclose="handleClose"
+  ></ad>
+  <ad
+    wx:else
+    unit-id="{{unitId}}"
+    ad-theme="{{adTheme}}"
+    ad-intervals="{{adIntervals}}"
+    bindload="handleLoad"
+    binderror="handleError"
+    bindclose="handleClose"
+  ></ad>
+</view>

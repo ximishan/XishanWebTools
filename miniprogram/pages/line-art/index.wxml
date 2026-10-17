@@ -1,0 +1,186 @@
+<view class="page safe-bottom">
+  <view class="intro">
+    <view class="intro-badge">文字图片工具</view>
+    <view class="intro-title">线稿文字生成器</view>
+    <view class="intro-subtitle">所有文字与图片只在当前设备处理，不上传服务器。</view>
+  </view>
+
+  <view class="preview-card">
+    <view class="preview-head">
+      <view>
+        <view class="section-title">实时预览</view>
+        <view class="section-note">{{ratioLabel}} · PNG</view>
+      </view>
+      <view class="preview-status">{{backgroundModeLabel}}</view>
+    </view>
+    <view class="canvas-shell checkerboard">
+      <canvas
+        id="artCanvas"
+        type="2d"
+        class="art-canvas"
+        style="height: {{previewHeight}}rpx;"
+      ></canvas>
+    </view>
+    <view class="action-row">
+      <button class="button secondary" disabled="{{!canvasReady}}" bindtap="reroll">重新随机</button>
+      <button class="button primary" disabled="{{!canvasReady}}" bindtap="saveImage">保存 PNG</button>
+    </view>
+  </view>
+
+  <view class="page-ad">
+    <ad-slot
+      enabled="{{lineArtAd.enabled}}"
+      unit-id="{{lineArtAd.unitId}}"
+      ad-type="{{lineArtAd.type}}"
+      ad-theme="{{lineArtAd.theme}}"
+      ad-intervals="{{lineArtAd.intervals}}"
+    ></ad-slot>
+  </view>
+
+  <view class="settings-card">
+    <view class="section-title">文字与尺寸</view>
+    <view class="field">
+      <view class="field-label">文字内容</view>
+      <textarea
+        class="text-input"
+        value="{{text}}"
+        maxlength="200"
+        auto-height
+        placeholder="输入要生成的文字"
+        bindinput="onTextInput"
+      ></textarea>
+    </view>
+    <view class="field">
+      <view class="field-label">画布比例</view>
+      <picker mode="selector" range="{{ratioOptions}}" range-key="label" value="{{ratioIndex}}" bindchange="onRatioChange">
+        <view class="picker-value">{{ratioLabel}}<text>⌄</text></view>
+      </picker>
+    </view>
+  </view>
+
+  <view class="settings-card">
+    <view class="section-title">背景</view>
+    <view class="section-note">支持渐变、纯色、透明和用户上传图片。</view>
+    <view class="field">
+      <view class="field-label">背景类型</view>
+      <picker mode="selector" range="{{backgroundModes}}" range-key="label" value="{{backgroundModeIndex}}" bindchange="onBackgroundModeChange">
+        <view class="picker-value">{{backgroundModeLabel}}<text>⌄</text></view>
+      </picker>
+    </view>
+
+    <view wx:if="{{backgroundMode == 'solid'}}" class="conditional-panel">
+      <view class="field-label">常用颜色</view>
+      <view class="color-row">
+        <view
+          wx:for="{{colorPresets}}"
+          wx:key="*this"
+          class="color-swatch {{backgroundColor == item ? 'is-active' : ''}}"
+          style="background: {{item}};"
+          data-color="{{item}}"
+          bindtap="selectColor"
+        ></view>
+      </view>
+      <input class="hex-input" value="{{backgroundColor}}" maxlength="7" bindinput="onColorInput" placeholder="#eef8fa" />
+    </view>
+
+    <view wx:if="{{backgroundMode == 'image'}}" class="conditional-panel">
+      <view wx:if="{{backgroundImagePath}}" class="background-preview-row">
+        <image class="background-thumb" src="{{backgroundImagePath}}" mode="aspectFill"></image>
+        <view class="background-actions">
+          <button class="mini-button" bindtap="chooseBackgroundImage">重新选择</button>
+          <button class="mini-button danger" bindtap="removeBackgroundImage">删除背景</button>
+        </view>
+      </view>
+      <button wx:else class="upload-button" bindtap="chooseBackgroundImage">＋ 选择背景图片</button>
+
+      <view class="field compact">
+        <view class="field-label">填充方式</view>
+        <picker mode="selector" range="{{fitOptions}}" range-key="label" value="{{fitIndex}}" bindchange="onFitChange">
+          <view class="picker-value">{{fitLabel}}<text>⌄</text></view>
+        </picker>
+      </view>
+      <view class="slider-field">
+        <view class="slider-label"><text>背景透明度</text><text>{{backgroundOpacity}}</text></view>
+        <slider data-key="backgroundOpacity" min="0.1" max="1" step="0.05" value="{{backgroundOpacity}}" activeColor="#284157" bindchanging="onSliderChanging" bindchange="onSliderChange" />
+      </view>
+      <view class="slider-field">
+        <view class="slider-label"><text>背景模糊</text><text>{{backgroundBlur}} px</text></view>
+        <slider data-key="backgroundBlur" min="0" max="12" step="1" value="{{backgroundBlur}}" activeColor="#284157" bindchanging="onSliderChanging" bindchange="onSliderChange" />
+      </view>
+      <view wx:if="{{backgroundFit != 'stretch'}}">
+        <view class="slider-field">
+          <view class="slider-label"><text>背景缩放</text><text>{{backgroundZoom}}×</text></view>
+          <slider data-key="backgroundZoom" min="1" max="2" step="0.05" value="{{backgroundZoom}}" activeColor="#284157" bindchanging="onSliderChanging" bindchange="onSliderChange" />
+        </view>
+        <view class="slider-field">
+          <view class="slider-label"><text>水平位置</text><text>{{backgroundOffsetX}}</text></view>
+          <slider data-key="backgroundOffsetX" min="-50" max="50" step="1" value="{{backgroundOffsetX}}" activeColor="#284157" bindchanging="onSliderChanging" bindchange="onSliderChange" />
+        </view>
+        <view class="slider-field">
+          <view class="slider-label"><text>垂直位置</text><text>{{backgroundOffsetY}}</text></view>
+          <slider data-key="backgroundOffsetY" min="-50" max="50" step="1" value="{{backgroundOffsetY}}" activeColor="#284157" bindchanging="onSliderChanging" bindchange="onSliderChange" />
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="settings-card">
+    <view class="section-title">效果预设</view>
+    <view class="preset-row">
+      <button class="preset {{activePreset == 'light' ? 'active' : ''}}" data-preset="light" bindtap="applyPreset">轻度</button>
+      <button class="preset {{activePreset == 'mid' ? 'active' : ''}}" data-preset="mid" bindtap="applyPreset">中度</button>
+      <button class="preset {{activePreset == 'strong' ? 'active' : ''}}" data-preset="strong" bindtap="applyPreset">强度</button>
+    </view>
+  </view>
+
+  <view class="settings-card">
+    <view class="section-title">精细调整</view>
+
+    <view class="slider-field">
+      <view class="slider-label"><text>文字大小</text><text>{{fontSize}} px</text></view>
+      <slider data-key="fontSize" min="48" max="150" step="1" value="{{fontSize}}" activeColor="#284157" bindchanging="onSliderChanging" bindchange="onSliderChange" />
+    </view>
+    <view class="slider-field">
+      <view class="slider-label"><text>文字描边</text><text>{{stroke}} px</text></view>
+      <slider data-key="stroke" min="0.8" max="5" step="0.2" value="{{stroke}}" activeColor="#284157" bindchanging="onSliderChanging" bindchange="onSliderChange" />
+    </view>
+    <view class="slider-field">
+      <view class="slider-label"><text>文字透明度</text><text>{{alpha}}</text></view>
+      <slider data-key="alpha" min="0.18" max="0.9" step="0.02" value="{{alpha}}" activeColor="#284157" bindchanging="onSliderChanging" bindchange="onSliderChange" />
+    </view>
+    <view class="slider-field">
+      <view class="slider-label"><text>文字缺损</text><text>{{damage}}</text></view>
+      <slider data-key="damage" min="0" max="0.55" step="0.01" value="{{damage}}" activeColor="#284157" bindchanging="onSliderChanging" bindchange="onSliderChange" />
+    </view>
+    <view class="slider-field">
+      <view class="slider-label"><text>字符错位</text><text>{{jitter}} px</text></view>
+      <slider data-key="jitter" min="0" max="18" step="1" value="{{jitter}}" activeColor="#284157" bindchanging="onSliderChanging" bindchange="onSliderChange" />
+    </view>
+    <view class="slider-field">
+      <view class="slider-label"><text>文字区干扰密度</text><text>{{local}}×</text></view>
+      <slider data-key="local" min="0.2" max="2.2" step="0.05" value="{{local}}" activeColor="#284157" bindchanging="onSliderChanging" bindchange="onSliderChange" />
+    </view>
+    <view class="slider-field">
+      <view class="slider-label"><text>全局折线</text><text>{{zig}}</text></view>
+      <slider data-key="zig" min="4" max="55" step="1" value="{{zig}}" activeColor="#284157" bindchanging="onSliderChanging" bindchange="onSliderChange" />
+    </view>
+    <view class="slider-field">
+      <view class="slider-label"><text>局部竖线</text><text>{{vert}}</text></view>
+      <slider data-key="vert" min="0" max="110" step="1" value="{{vert}}" activeColor="#284157" bindchanging="onSliderChanging" bindchange="onSliderChange" />
+    </view>
+    <view class="slider-field">
+      <view class="slider-label"><text>电路细节</text><text>{{circuit}}</text></view>
+      <slider data-key="circuit" min="0" max="160" step="1" value="{{circuit}}" activeColor="#284157" bindchanging="onSliderChanging" bindchange="onSliderChange" />
+    </view>
+    <view class="slider-field">
+      <view class="slider-label"><text>噪点</text><text>{{noise}}</text></view>
+      <slider data-key="noise" min="0" max="0.18" step="0.01" value="{{noise}}" activeColor="#284157" bindchanging="onSliderChanging" bindchange="onSliderChange" />
+    </view>
+    <view class="slider-field last">
+      <view class="slider-label"><text>模糊</text><text>{{blur}} px</text></view>
+      <slider data-key="blur" min="0" max="1.5" step="0.1" value="{{blur}}" activeColor="#284157" bindchanging="onSliderChanging" bindchange="onSliderChange" />
+    </view>
+  </view>
+
+  <view class="bottom-note">透明背景请使用 PNG 保存；最终效果请以手机相册中的图片为准。</view>
+</view>

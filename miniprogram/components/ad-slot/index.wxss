@@ -1,0 +1,13 @@
+.ad-slot {
+  width: 100%;
+  overflow: hidden;
+}
+
+.ad-slot--loaded {
+  margin: 24rpx 0;
+}
+
+.ad-slot ad {
+  display: block;
+  width: 100%;
+}

@@ -1,0 +1,16 @@
+{
+  "pages": [
+    "pages/home/index",
+    "pages/line-art/index"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#f4f7f9",
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "西山工具箱",
+    "backgroundColor": "#f4f7f9",
+    "backgroundTextStyle": "light"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

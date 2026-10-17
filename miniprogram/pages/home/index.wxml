@@ -1,0 +1,47 @@
+<view class="page safe-bottom">
+  <view class="hero">
+    <view class="eyebrow">XISHAN TOOLS</view>
+    <view class="hero-title">西山工具箱</view>
+    <view class="hero-subtitle">把常用的小工具集中到一个小程序里。无需后端，图片默认只在手机本地处理。</view>
+  </view>
+
+  <view class="tool-grid">
+    <view
+      class="tool-card"
+      wx:for="{{tools}}"
+      wx:key="id"
+      data-path="{{item.path}}"
+      bindtap="openTool"
+      hover-class="tool-card--pressed"
+      hover-stay-time="100"
+    >
+      <view class="tool-icon" style="color: {{item.iconColor}};">{{item.icon}}</view>
+      <view class="tool-title">{{item.title}}</view>
+      <view class="tool-description">{{item.description}}</view>
+      <view class="tool-meta">
+        <view class="tool-tag">{{item.tag}}</view>
+        <view class="tool-arrow">进入 →</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="home-ad">
+    <ad-slot
+      enabled="{{homeAd.enabled}}"
+      unit-id="{{homeAd.unitId}}"
+      ad-type="{{homeAd.type}}"
+      ad-theme="{{homeAd.theme}}"
+      ad-intervals="{{homeAd.intervals}}"
+    ></ad-slot>
+  </view>
+
+  <view class="extension-note">
+    <view class="extension-plus">＋</view>
+    <view>
+      <view class="extension-title">为后续工具预留</view>
+      <view class="extension-description">新增工具时，只需增加页面并在工具配置中登记。</view>
+    </view>
+  </view>
+
+  <view class="footer">西山工具箱 · 所有图片默认在本机处理</view>
+</view>

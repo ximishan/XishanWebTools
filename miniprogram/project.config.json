@@ -1,0 +1,20 @@
+{
+  "description": "西山工具箱微信小程序",
+  "packOptions": {
+    "ignore": []
+  },
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "coverView": true,
+    "showShadowRootInWxmlPanel": true,
+    "compileHotReLoad": true
+  },
+  "compileType": "miniprogram",
+  "appid": "touristappid",
+  "projectname": "西山工具箱",
+  "condition": {}
+}
